@@ -1,120 +1,152 @@
 import "./index.css"
 import React, {useState} from "react"
+import BmiChart from "./Graph.jsx"
 
 
 
 function Component(){
 
-    const[weight, setWeight] = useState("")
-    const[weightInput, setWeightInput] = useState(" ")
-    const[unit, setUnit] = useState('Kg')
-    const[height, setHeight] = useState("")
-    const[bmi, setBmi] = useState(" ")
+    const[system, setSystem] = useState("Metric")
+
+    const[weightKg, setWeightKg] = useState("")
+    const[weightLbs, setWeightLbs] = useState("")
+
+    const[heightCm, setHeightCm] = useState("")
+    const[heightFeet, setHeightFeet] = useState("")
+    const[heightInches, setHeightInches] = useState("")
+
+    const[bmi, setBmi] = useState("")
     const[numericBmi, setNumericBmi] = useState(null)
 
-    const LB_per_Kg = 2.2
-
-    function calcCateogory(bmi){
+    function calcCateogory(bmiValue){
         switch(true){
-            case(bmi < 18.5) : return "Underweight"
-            case(bmi >= 18.5 && bmi < 24.9) : return "normal"
-            case(bmi >= 25 && bmi < 29.9) : return "Overweight"
-            case(bmi >= 30) : return "Obese"
+            case(bmiValue < 18.5) : return "Underweight"
+            case(bmiValue >= 18.5 && bmiValue <= 24.9) : return "normal"
+            case(bmiValue >= 25 && bmiValue <= 29.9) : return "Overweight"
+            case(bmiValue >= 30) : return "Obese"
             default : return ""
         }
     }
-    function HandleUnitChange(newUnit){
-        if(!weightInput){
-            setUnit(newUnit)
-            return
+    function HandleSystemChange(sys){
+        if(sys === "Metric"){
+            setSystem("Metric")
+            setWeightKg("")
+            setHeightCm("")
         }
-    
-        const val = parseFloat(weightInput)
-        if(Number.isNaN(val)){
-            setUnit(newUnit)
-            return
+        else if(sys === "Imperial"){
+            setSystem("Imperial")
+            setWeightLbs("")
+            setHeightFeet("")
+            setHeightInches("")
         }
-
-        let converted
-        if(unit === 'Kg' && newUnit === "Lbs"){
-            converted = (val * LB_per_Kg).toFixed(2
-            )
-        }
-        else if(unit === "Lbs" && newUnit === "Kg"){
-            converted = (val / LB_per_Kg).toFixed(2)
-        } else {
-            converted = val.toFixed(2)
-        }
-        setWeightInput(String(converted))
-        setUnit(newUnit)
     }
 
-    function HandleCalc(){
-        const w = parseFloat(weightInput)
-        const h = parseFloat(height) / 100
-        if(!w || !h){
-            setBmi("Please enter valid weight and height")
-            setNumericBmi(null)
-            return
+    function HandleCalc() {
+        let bmiValue = 0
+        if(system === "Metric"){
+            const heightInCm = parseFloat(heightCm)
+            const weightInKg = parseFloat(weightKg)
+            if(heightCm > 0 && weightInKg > 0){
+                bmiValue = weightInKg / ((heightInCm) ** 2) * 10000
+                const category = calcCateogory(bmiValue)
+                setBmi(`Your BMI is ${bmiValue.toFixed(2)} (${category})`)
+            }
+            else{
+                setBmi("Please enter valid height and weight")
+            }
         }
-
-        const weightKg = unit === "Kg" ? w : w / LB_per_Kg
-        const result = +(weightKg / (h * h)).toFixed(2)
-        const category = calcCateogory(result)
-        setBmi(`${result} - ${category}`)
-        setWeight(`${parseFloat(weightInput).toFixed(2)} ${unit}`)
-        setNumericBmi(result)
+        else if(system === "Imperial"){
+            const heightInInches = (parseFloat(heightFeet) * 12) + parseFloat(heightInches)
+            const weightInLbs = parseFloat(weightLbs)
+            if(heightInInches > 0 && weightInLbs > 0){
+                bmiValue = weightInLbs / (heightInInches ** 2) * 703
+                const category = calcCateogory(bmiValue)
+                setBmi(`Your BMI is ${bmiValue.toFixed(2)} (${category})`)
+            }
+            else {
+                setBmi("Please enter valid height and weight")
+            }
+        }
     }
     
     return(
         <div className="container">
-            <h1>BMI Tracker</h1>
-            
-            <input 
-                type="number" 
-                value={weightInput} 
-                onChange ={e => setWeightInput(e.target.value)}
-                placeholder={`weight (${unit})`}
-            />
+            <div className="i_Panel">
+                <h1>BMI Tracker</h1>
+                <div className="Sys_toggle">
+                    <label>
+                        <input
+                            type="radio"
+                            name="system"
+                            checked ={system === "Metric"}
+                            onChange={() => HandleSystemChange("Metric")}
+                        />
+                        <span className="checkmark"></span>
+                        Metric
+                    </label>
+                    <label>
+                        <input 
+                            type="radio"
+                            name="system"
+                            checked={system === "Imperial"}
+                            onChange={() => HandleSystemChange("Imperial")}
+                        />
+                        <span className="checkmark"></span>
+                        Imperial
+                    </label>
+                </div>
 
-
-            <input
-                type="number"
-                onChange={e => setHeight(e.target.value)}
-                placeholder="height (cm)"
-            />
-
-            <div id="choose-Btns">
-                <label>
-                    <input
-                        type="radio"
-                        name="unit"
-                        checked={unit === "Kg"}
-                        onChange={() => HandleUnitChange("Kg")}
-                    />
-                    <span className="checkmark"></span>
-                    Kg
-                </label>
-                <label>
-                    <input
-                        type="radio"
-                        name="unit"
-                        checked={unit === "Lbs"}
-                        onChange={() => HandleUnitChange("Lbs")}
-                    />
-                    <span className="checkmark"></span>
-                    Lbs
-                </label>
+                {system === "Metric" ? (
+                    <div className="metric-inputs">
+                        <div className="weight">
+                            <input
+                                type="number"
+                                value={weightKg}
+                                onChange={(e) => setWeightKg(e.target.value)}
+                                placeholder="Weight (Kg)"
+                            />
+                        </div>
+                        <div className="height">
+                            <input
+                                type="number"
+                                value={heightCm}
+                                onChange={(e) => setHeightCm(e.target.value)}
+                                placeholder="Height (Cm)"
+                            />
+                        </div>
+                    </div>   
+                ) : (
+                    <div className="Imperial-inputs">
+                        <div className="weight">
+                            <input
+                                type="number"
+                                value={weightLbs}
+                                onChange={(e) => setWeightLbs(e.target.value)}
+                                placeholder="Weight (Lbs)"
+                            />
+                        </div>
+                        <div className="height">
+                            <div id="height-feet-inches">
+                                <input
+                                    type="number"
+                                    value={heightFeet}
+                                    onChange={(e) => setHeightFeet(e.target.value)}
+                                    placeholder="Height (Feet)"
+                                />
+                                <input
+                                    type="number"
+                                    value={heightInches}
+                                    onChange={(e) => setHeightInches(e.target.value)}
+                                    placeholder="Height (Inches)"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-
-            <button onClick={HandleCalc} >
-                Calculate BMI</button>
+            <button onClick={HandleCalc}>Calculate BMI</button>
             <p>{bmi}</p>
-            
-
-            
         </div>
     )
 }
-
 export default Component
